@@ -53,47 +53,64 @@
 --|
 --+----------------------------------------------------------------------------
 library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
-
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity top_basys3 is
-	port(
-        clk     :   in std_logic;
-        sw  	:   in  std_logic_vector(0 downto 0);
-		JA 		:   out std_logic_vector(2 downto 0);
-		btnC 	:   in  std_logic;
-		btnL	: 	in  std_logic
-	);
+  port(
+    clk   : in  std_logic;
+    sw    : in  std_logic_vector(0 downto 0);
+    JA    : out std_logic_vector(2 downto 0);
+    btnC  : in  std_logic;
+    btnL  : in  std_logic
+  );
 end top_basys3;
 
-architecture top_basys3_arch of top_basys3 is 
+architecture top_basys3_arch of top_basys3 is
 
---Declare stoplight component here 
+  -- Declare stoplight component here
+  component stoplight_fsm is
+    port(
+      i_C     : in  std_logic;
+      i_reset : in  std_logic;
+      i_clk   : in  std_logic;
+      o_R     : out std_logic;
+      o_Y     : out std_logic;
+      o_G     : out std_logic
+    );
+  end component stoplight_fsm;
 
+  component clock_divider is
+    generic ( constant k_DIV : natural := 2 );
+    port (
+      i_clk   : in  std_logic; -- basys3 clk
+      i_reset : in  std_logic; -- asynchronous
+      o_clk   : out std_logic  -- divided (slow) clock
+    );
+  end component clock_divider;
 
-component clock_divider is
-	generic ( constant k_DIV : natural := 2	);
-	port ( 	i_clk    : in std_logic;		   -- basys3 clk
-			i_reset  : in std_logic;		   -- asynchronous
-			o_clk    : out std_logic		   -- divided (slow) clock
-	);
-end component clock_divider;
-
-	signal w_clk : std_logic;		--this wire provides the connection between o_clk and stoplight clk
+  signal w_clk : std_logic; -- connection between o_clk and stoplight clk
 
 begin
-	-- PORT MAPS ----------------------------------------
-	--Port map stoplight here based on the design provided
+  -- PORT MAPS ----------------------------------------
+  -- Port map stoplight here based on the design provided
+  stoplight_inst : stoplight_fsm
+    port map (
+      i_C     => sw(0),
+      i_reset => btnC,
+      i_clk   => w_clk,
+      o_R     => JA(0),
+      o_Y     => JA(1),
+      o_G     => JA(2)
+    );
 
+  -- Complete the clock_divider portmap below based on the design provided
+  clkdiv_inst : clock_divider
+    generic map ( k_DIV => 50000000 ) -- 1 Hz clock from 100 MHz
+    port map (
+      i_clk   => clk,
+      i_reset => btnC,
+      o_clk   => w_clk
+    );
 
---Complete the clock_divider portmap below based on the design provided	
-	clkdiv_inst : clock_divider 		--instantiation of clock_divider to take 
-        generic map ( k_DIV => 50000000 ) -- 1 Hz clock from 100 MHz
-        port map (						  
-            i_clk   => 
-            i_reset => 
-            o_clk   => 
-        );    
-	
 end top_basys3_arch;
